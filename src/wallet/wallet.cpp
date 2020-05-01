@@ -791,6 +791,13 @@ bool CWallet::MarkReplaced(const uint256& originalHash, const uint256& newHash)
 
     wtx.mapValue["replaced_by_txid"] = newHash.ToString();
 
+    // fInMempool must be unset here - while it will be set to false by the
+    // left-mempool callback, if we did not there would be a race where a user
+    // could call bumpfee+abandontransaction in a loop and hit spurious
+    // 'transaction not eligible for replacement' errors because the wallet
+    // thinks that the replaced transaction is still in the mempool.
+    wtx.fInMempool = false;
+
     WalletBatch batch(GetDatabase());
 
     bool success = true;
